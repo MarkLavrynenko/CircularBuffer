@@ -2,12 +2,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Threading;
 
 namespace CircularBuffer
 {
-    // should we write IEnumerable<T>
     public class CircularBuffer<T> : IEnumerable<T>, ICollection<T>, IEnumerable, ICollection
     {
         private readonly int _capacity;
@@ -15,13 +15,15 @@ namespace CircularBuffer
         private int _start, _end;
         private T[] _buffer;
 
-        // TODO Serializable attribute
-        private object syncRoot;
+        [NonSerialized]
+        private object _syncRoot;
 
         public CircularBuffer(int capacity)
         {
+			if (capacity < 0)
+				throw new ArgumentException("Capacity can't be less than zero");
             _capacity = capacity;
-            _start = _end = capacity;
+            _start = _end = 0;
             _buffer = new T[capacity];
         }
 
@@ -39,12 +41,17 @@ namespace CircularBuffer
             get { return _size; }
         }
 
-
-            
         #endregion
 
+	    public void Put(T[] items)
+	    {
+		    foreach (var t in items)
+		    {
+			    Put(t);
+		    }
+	    }
 
-        public void Put(T item)
+	    public void Put(T item)
         {
             if (_size == _capacity)
                 throw new InvalidOperationException("Buffer is full");
@@ -55,23 +62,85 @@ namespace CircularBuffer
             _size++;
         }
 
+	    public void Skip(int amount)
+	    {
+			if (amount > _size)
+				throw new ArgumentOutOfRangeException("Can't skip too many elements");
+		    _start += amount;
+		    if (_start >= _capacity)
+			    _start -= _capacity;
+		    _size -= amount;
+	    }
+
+		#region Get Methods
+
+	    public T[] Get(int amount)
+	    {
+		    var ans = new T[amount];
+		    Get(ans);
+		    return ans;
+	    }
+
+	    public int Get(T[] dst)
+	    {
+		    var amount = dst.Length;
+		    var realCount = Math.Min(amount, Size);
+		    for (var i = 0; i < realCount; ++i, ++_start)
+		    {
+			    if (_start == _capacity)
+				    _start = 0;
+			    dst[i] = _buffer[_start];
+		    }
+		    _size -= realCount;
+		    return realCount;
+	    }
+
         public T Get()
         {
             if (0 == _size)
                 throw new InvalidOperationException("Buffer is empty");
             --_size;
-            T ans = _buffer[_start];
+            var ans = _buffer[_start];
             if (++_start == _capacity)
                 _start = 0;
-
             return ans;
-        }   
+        }
 
+		#endregion
 
+		#region CopyTo methods
+
+	    public void CopyTo(T[] dst)
+	    {
+		    CopyTo(dst, dst.Length);
+	    }
+
+	    public void CopyTo(T[] dst, int amount)
+	    {
+		    CopyTo(dst, amount, 0);
+	    }
+
+	    public void CopyTo(T[] dst, int amount, int arrayIndex)
+	    {
+			if (arrayIndex < 0)
+				throw new IndexOutOfRangeException("Array index can't be less than zero");
+			if (arrayIndex + _size > dst.Length)
+				throw new ArgumentException("Array too small");
+			var index = _start;
+			for (var i = 0; i < _size; ++i, ++index)
+			{
+				if (index == _capacity)
+					index = 0;
+				dst[arrayIndex++] = _buffer[index];
+			}            
+	    }
+
+		#endregion
+		
         private IEnumerator<T> GetEnumerator()
         {
-            int index = _start;
-            for (int i = 0; i < _start; ++i, ++index)
+            var index = _start;
+            for (var i = 0; i < _start; ++i, ++index)
             {
                 if (_capacity == index)
                     index = 0;
@@ -96,8 +165,8 @@ namespace CircularBuffer
         bool ICollection<T>.Contains(T item)
         {
             var comparer = EqualityComparer<T>.Default;
-            int index = _start;
-            for (int i = 0; i < _size; ++i, ++index)
+            var index = _start;
+            for (var i = 0; i < _size; ++i, ++index)
             {
                 if (index == _capacity)
                     index = 0;
@@ -110,15 +179,7 @@ namespace CircularBuffer
 
         void ICollection<T>.CopyTo(T[] array, int arrayIndex)
         {
-            if (arrayIndex + _size >= array.Length)
-                throw new ArgumentException("Array too small");
-            int index = _start;
-            for (int i = 0; i < _size; ++i, ++_start)
-            {
-                if (_start == _capacity)
-                    _start = 0;
-                array[arrayIndex++] = _buffer[index];
-            }            
+            CopyTo(array, Size, arrayIndex);
         }
 
         int ICollection<T>.Count
@@ -151,17 +212,17 @@ namespace CircularBuffer
 
         public int Count { get { return Size; } }
 
-        public bool IsSynchronized { get { return false;  } }
+        public bool IsSynchronized { get { return false; } }
 
         public object SyncRoot
         {
             get
             {
-                if (null == syncRoot)
+                if (null == _syncRoot)
                 {
-                    Interlocked.CompareExchange(ref syncRoot, new Object(), null);
+                    Interlocked.CompareExchange(ref _syncRoot, new Object(), null);
                 }
-                return syncRoot;
+                return _syncRoot;
             }
         }
 

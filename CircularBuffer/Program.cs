@@ -8,12 +8,8 @@ namespace CircularBuffer
 {
     class Program
     {
-        public static CircularBuffer<int> buff;
-        const int bufferSize = 50;
-
         static void Main(string[] args)
         {
-            buff = new CircularBuffer<int>(bufferSize);
         }
     }
 }
