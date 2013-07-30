@@ -31,7 +31,7 @@ namespace CircularBuffer
 	    {
 		    _size = _capacity = other.Count;
 		    _start = 0;
-		    _end = _capacity - 1;
+		    _end = 0;
 			_buffer = new T[_capacity];
 			other.CopyTo(_buffer, 0);
 	    }
@@ -243,7 +243,7 @@ namespace CircularBuffer
             if (ind == _size)
                 return false;
 
-			for (var i = 1; i < ind; ++i)
+			for (var i = 1; i <= ind; ++i)
 				SetAt(i, At(i-1));
 	        --_size;
 	        ++_start;
