@@ -41,6 +41,14 @@ namespace CircularBuffer
             get { return _size; }
         }
 
+	    public T this[int index]
+	    {
+		    get
+		    {
+			    return At(index);
+		    }
+	    }
+
         #endregion
 
 	    public void Put(T[] items)
@@ -71,6 +79,16 @@ namespace CircularBuffer
 			    _start -= _capacity;
 		    _size -= amount;
 	    }
+
+		public T At(int index)
+		{
+			if (index >= _size)
+				throw new ArgumentOutOfRangeException("Index is too big");
+			index += _start;
+			if (index >= _capacity)
+				index -= _capacity;
+			return _buffer[index];
+		}
 
 		#region Get Methods
 

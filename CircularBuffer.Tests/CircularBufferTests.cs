@@ -110,6 +110,29 @@ namespace CircularBuffer.Tests
 	    }
 
 	    [TestMethod]
+	    public void AtIndexTest()
+	    {
+		    var data = new byte[5] {10, 20, 30, 40, 50};
+			var buff = new CircularBuffer<byte>(10);
+			buff.Put(data);
+			Assert.AreEqual(10, buff[0]);
+		    buff.Get();
+
+			Assert.AreEqual(20, buff[0]);
+			Assert.AreEqual(40, buff[2]);
+	    }
+
+	    [TestMethod, ExpectedException(typeof (ArgumentOutOfRangeException))]
+	    public void AtIndexOverFlow()
+	    {
+			var data = new byte[5] { 10, 20, 30, 40, 50 };
+			var buff = new CircularBuffer<byte>(10);
+			buff.Put(data);
+			Assert.AreEqual(50, buff[4]);
+		    buff.At(5);
+	    }
+
+	    [TestMethod]
 	    public void CopyToTest()
 	    {
 		    const int count = 5;
