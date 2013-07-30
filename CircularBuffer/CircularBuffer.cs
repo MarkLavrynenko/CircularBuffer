@@ -87,6 +87,16 @@ namespace CircularBuffer
 		    _size -= amount;
 	    }
 
+	    public void SetAt(int index, T item)
+	    {
+			if (index >= _size)
+				throw new ArgumentOutOfRangeException("Index is too big");
+		    index += _start;
+		    if (index >= _capacity)
+			    index -= _capacity;
+		    _buffer[index] = item;
+	    }
+
 		public T At(int index)
 		{
 			if (index >= _size)
@@ -97,7 +107,14 @@ namespace CircularBuffer
 			return _buffer[index];
 		}
 
-		#region Get Methods
+		// return index of item
+		// return size when item not found
+	    public int Find(T item)
+	    {
+		    return this.TakeWhile(t => !t.Equals(item)).Count();
+	    }
+
+	    #region Get Methods
 
 	    public T[] Get(int amount)
 	    {
@@ -220,10 +237,17 @@ namespace CircularBuffer
         // remove first element of the buffer
         bool ICollection<T>.Remove(T item)
         {
-            if (0 == _size)
-                return false;                
-            Get();
-            return true;
+	        var ind = Find(item);
+            if (ind == _size)
+                return false;
+
+			for (var i = 1; i < ind; ++i)
+				SetAt(i, At(i-1));
+	        --_size;
+	        ++_start;
+	        if (_start == _capacity)
+		        _start = 0;
+			return true;
         }
 
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
