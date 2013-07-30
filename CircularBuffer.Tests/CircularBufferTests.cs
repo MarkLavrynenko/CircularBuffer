@@ -49,9 +49,11 @@ namespace CircularBuffer.Tests
 			collection.Add(61);
 
 		    var buff = new CircularBuffer<byte>(collection);
+		    var i = 0;
 		    foreach (var b in collection)
 		    {
-				Assert.IsTrue(buff.Contains(b));   
+				Assert.IsTrue(buff.Contains(b)); 
+				Assert.AreEqual(b, buff[i++]);  
 		    }
 	    }
 
@@ -80,6 +82,25 @@ namespace CircularBuffer.Tests
 			((ICollection<byte>)buff).Clear();
 	        Assert.AreEqual(0, buff.Size);
         }
+
+	    [TestMethod]
+	    public void SetAtTesting()
+	    {
+		    var buff = new CircularBuffer<byte>(new byte[] {10, 5, 38});
+			Assert.AreEqual(38, buff[2]);
+			buff.SetAt(2, 100);
+			Assert.AreEqual(100, buff[2]);
+	    }
+
+	    [TestMethod]
+	    public void FindTest()
+	    {
+			var buff = new CircularBuffer<byte>(new byte[] { 10, 5, 38, 128, 64 });
+			Assert.AreEqual(0, buff.Find(10));
+			Assert.AreEqual(1, buff.Find(5));
+			Assert.AreEqual(2, buff.Find(38));
+			Assert.AreEqual(3, buff.Find(128));
+	    }
 
 	    [TestMethod]
 	    public void SkipTest()
