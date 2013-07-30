@@ -20,14 +20,21 @@ namespace CircularBuffer
 
         public CircularBuffer(int capacity)
         {
-			if (capacity < 0)
+			if (capacity <= 0)
 				throw new ArgumentException("Capacity can't be less than zero");
             _capacity = capacity;
             _start = _end = 0;
             _buffer = new T[capacity];
         }
 
-        // TODO constructor from another collection
+	    public CircularBuffer(ICollection<T> other)
+	    {
+		    _size = _capacity = other.Count;
+		    _start = 0;
+		    _end = _capacity - 1;
+			_buffer = new T[_capacity];
+			other.CopyTo(_buffer, 0);
+	    }
 
         #region Public properties
         // TODO make read-write
