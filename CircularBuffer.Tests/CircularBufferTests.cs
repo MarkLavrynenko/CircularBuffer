@@ -72,6 +72,44 @@ namespace CircularBuffer.Tests
 	        }
         }
 
+	    [TestMethod]
+	    public void BufferWithJumping()
+	    {
+		    var buff = new CircularBuffer<byte>(new byte[] {1, 2, 3, 4, 5});
+		    buff.Get(2);
+			buff.Put(new byte[] { 7, 9 });
+			// array structure is
+			//			 * 				START
+			// | 0 | 1 | 2 | 3 | 4 |	CELLS
+			// | 7 | 9 | 3 | 4 | 5 |	VALUES	
+			Assert.AreEqual(3, buff.Find(7));
+			Assert.AreEqual(4, buff.Find(9));
+			Assert.AreEqual(3, buff.Find(7));
+			var expected = new byte[] { 3, 4, 5, 7, 9 };
+			CollectionAssert.AreEqual(expected, buff);
+
+			// Set/At
+			Assert.AreEqual(9, buff.At(4));
+			buff.SetAt(4, 10);
+			Assert.AreEqual(10, buff.At(4));
+
+			// array structure is
+			//			  * 			START
+			// | 0 | 1  | 2 | 3 | 4 |	CELLS
+			// | 7 | 10 | 3 | 4 | 5 |	VALUES	
+			// Contains/Remove
+			Assert.IsTrue((buff as ICollection<byte>).Contains(10));
+			Assert.IsFalse((buff as ICollection<byte>).Contains(2));
+		    (buff as ICollection<byte>).Remove(5);
+		    // array structure is
+		    //			  * 			START
+		    // | 0 | 1  | 2 | 3 | 4 |	CELLS
+		    // | 7 | 10 | - | 3 | 4 |	VALUES	
+		    // Contains/Remove
+			Assert.IsFalse((buff as ICollection<byte>).Contains(5));
+			Assert.IsTrue((buff as ICollection<byte>).Contains(7));
+	    }
+
         [TestMethod]
         public void CleanBuffer()
         {
