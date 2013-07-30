@@ -48,6 +48,8 @@ namespace CircularBuffer
             get { return _size; }
         }
 
+		public bool AllowOverflow { get; set; }
+
 	    public T this[int index]
 	    {
 		    get
@@ -182,7 +184,7 @@ namespace CircularBuffer
         private IEnumerator<T> GetEnumerator()
         {
             var index = _start;
-            for (var i = 0; i < _start; ++i, ++index)
+            for (var i = 0; i < _size; ++i, ++index)
             {
                 if (_capacity == index)
                     index = 0;
